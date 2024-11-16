@@ -1,4 +1,6 @@
 import asyncio
+import os
+
 import pandas as pd
 import aiohttp
 from bs4 import BeautifulSoup
@@ -449,7 +451,7 @@ class Club:
                         pass
         return links
 
-    async def scrape(self):
+    async def parse(self):
         main_link = self.generate_link(2023)
         async with aiohttp.ClientSession(headers=HEADERS) as session:
             tasks = []
@@ -461,12 +463,17 @@ class Club:
             self.data = data
 
     def show(self):
+        try:
+            os.mkdir("./csv")
+        except FileExistsError:
+            pass
         self.data.reverse()
         end_data = []
         for i in self.data:
             end_data.append([i[0], i[1], i[2], f'{i[3]}:{i[4]}', i[5], i[6]])
         df = pd.DataFrame(end_data, columns=['турнир', 'хозяева', 'гости', 'счёт', 'жёлтые', 'варианты'])
         df_new = df.loc[(df["хозяева"] != "NaN") & (df["гости"] != "NaN")]
+        df_new.to_csv(f'./csv/{self.name}.csv', index=False)
         print(df_new.to_string())
 
 
@@ -540,4 +547,5 @@ leagues = {
     "Бельгия": 'https://www.sports.ru/jupiler-league/table',
     "Португалия": 'https://www.sports.ru/primeira-liga/table',
     "Турция": 'https://www.sports.ru/super-lig/table/',
+    "Лига наций": 'https://www.sports.ru/football/tournament/uefa-nations-league/table/'
 }
