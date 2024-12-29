@@ -1,9 +1,13 @@
 import asyncio
 import os
 
+import numpy as np
 import pandas as pd
 import aiohttp
 from bs4 import BeautifulSoup
+from matplotlib import pyplot as plt
+from matplotlib.ticker import MultipleLocator
+import seaborn as sns
 
 HEADERS = {'Accept-Language': 'en-US,en;q=0.8', "User-Agent":
     "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/104.0.0.0 Safari/537.36"}
@@ -67,6 +71,31 @@ class Club:
                     new_text = new_text[:-1]
                     return int(new_text)
 
+            def date_replacer(data: str):
+                new_data = None
+                date_replacer = {
+                    ' января ': '.01.',
+                    ' февраля ': '.02.',
+                    ' марта ': '.03.',
+                    ' апреля ': '.04.',
+                    ' мая ': '.05.',
+                    ' июня ': '.06.',
+                    ' июля ': '.07.',
+                    ' августа ': '.08.',
+                    ' сентября ': '.09.',
+                    ' октября ': '.10.',
+                    ' ноября ': '.11.',
+                    ' декабря ': '.12.'
+                }
+
+                for i in date_replacer.keys():
+                    if data.count(i) != 0:
+                        new_data = data.replace(i, date_replacer[i])
+                        break
+                return new_data
+
+            date = soup.find('a', {'class': "match-summary__date"})
+            match_date = date_replacer(date.text)
             articles = soup.find_all('article', {'class': 'event-container'})
             for article in articles:
                 event = article.find('div', {'class': 'event'})
@@ -392,7 +421,7 @@ class Club:
 
             temp_variants = map(str, variants)
             variants_final = "-".join(temp_variants)
-            return [tournament.text, home_team.text, away_team.text, goals_home, goals_away,
+            return [match_date, tournament.text, home_team.text, away_team.text, goals_home, goals_away,
                     yellows_home + yellows_away, variants_final]
 
     async def get_reports(self, session, link):
@@ -452,7 +481,7 @@ class Club:
         return links
 
     async def parse(self):
-        main_link = self.generate_link(2023)
+        main_link = self.generate_link(2024)
         async with aiohttp.ClientSession(headers=HEADERS) as session:
             tasks = []
             links = await self.get_reports(session, main_link)
@@ -467,14 +496,43 @@ class Club:
             os.mkdir("./csv")
         except FileExistsError:
             pass
+        try:
+            os.mkdir("./variants")
+        except FileExistsError:
+            pass
         self.data.reverse()
         end_data = []
         for i in self.data:
-            end_data.append([i[0], i[1], i[2], f'{i[3]}:{i[4]}', i[5], i[6]])
-        df = pd.DataFrame(end_data, columns=['турнир', 'хозяева', 'гости', 'счёт', 'жёлтые', 'варианты'])
+            end_data.append([i[0], i[1], i[2], i[3], f'{i[4]}:{i[5]}', i[6], i[7]])
+        df = pd.DataFrame(end_data, columns=['дата', 'турнир', 'хозяева', 'гости', 'счёт', 'жёлтые', 'варианты'])
         df_new = df.loc[(df["хозяева"] != "NaN") & (df["гости"] != "NaN")]
         df_new.to_csv(f'./csv/{self.name}.csv', index=False)
+        self.draw_variants(df_new)
         print(df_new.to_string())
+
+    def draw_variants(self, df):
+        temp_variants = []
+        variants = []
+
+        for variant in df['варианты'].tolist():
+            temp_variants.append(variant.split('-'))
+        for element in temp_variants:
+            for unit in element:
+                variants.append(int(unit))
+        x = np.arange(min(variants), max(variants) + 1)
+        y = list(map(variants.count, x))
+        df = pd.DataFrame(y, index=[x for x in range(1, len(y) + 1)])
+        df = df.rename(columns={0: 'variants'})
+        plt.ioff()
+        sns.set(rc={'figure.figsize': (15.3, 8.3)})
+        sns.set(rc={'axes.facecolor': '#F0F0F0', 'figure.facecolor': '#F0F0F0', 'grid.color': '.8'})
+        zx = sns.barplot(data=df, x=x, y='variants')
+        zx.set(ylabel=None)
+        zx.set_yticks([i for i in range(0, max(y), 5)])
+        zx.yaxis.set_major_locator(MultipleLocator(base=1))
+        plt.xticks(fontsize=9)
+        plt.savefig(f'./variants/{self.name}_variants.png', bbox_inches='tight')
+        plt.close()
 
 
 class League:
@@ -547,5 +605,6 @@ leagues = {
     "Бельгия": 'https://www.sports.ru/jupiler-league/table',
     "Португалия": 'https://www.sports.ru/primeira-liga/table',
     "Турция": 'https://www.sports.ru/super-lig/table/',
-    "Лига наций": 'https://www.sports.ru/football/tournament/uefa-nations-league/table/'
+    "Лига наций": 'https://www.sports.ru/football/tournament/uefa-nations-league/table/',
+    "Шотландия": 'https://www.sports.ru/football/tournament/scottish-premier-league/table/'
 }
