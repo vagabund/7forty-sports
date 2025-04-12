@@ -240,7 +240,7 @@ class Club:
                 variants.append(14)
             elif 3 <= goals_home + goals_away <= 4:
                 variants.append(15)
-            else:
+            elif goals_home + goals_away > 4:
                 variants.append(16)
 
             if goals_away == 0:
