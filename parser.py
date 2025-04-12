@@ -20,7 +20,7 @@ class Club:
         self.data = None
 
     def generate_link(self, year):
-        new_link = f"{self.link}/{year}-{year + 1}/"
+        new_link = f"{self.link}{year}-{year + 1}/"
         return new_link
 
     async def get_html(self, session, link=None):
@@ -441,11 +441,9 @@ class Club:
                         'div', {'class': 'hide-field'}).text != "Россия. Третий дивизион" and i.find(
                         'td', {'class': 'name-td alLeft'}).find(
                         'div', {'class': 'hide-field'}).a['title'] != "Нидерланды. Суперкубок":
-                        scoreboard = i.find('td', {'class': 'score-td'})
-                        score = scoreboard.find('a')
-                        if score.text != "превью" and score.text != "отменен":
-                            noindex = score.find('noindex')
-                            if noindex is not None:
+                            scoreboard = i.find('td', {'class': 'score-td'})
+                            score = scoreboard.find('a')
+                            if score.text != "превью" and score.text != "отменен":
                                 if score['href'][:5] == "https":
                                     links.append(score['href'])
                                 else:
@@ -519,7 +517,7 @@ class Club:
         for element in temp_variants:
             for unit in element:
                 variants.append(int(unit))
-        x = np.arange(min(variants), max(variants) + 1)
+        x = np.arange(1, 41)
         y = list(map(variants.count, x))
         df = pd.DataFrame(y, index=[x for x in range(1, len(y) + 1)])
         df = df.rename(columns={0: 'variants'})
