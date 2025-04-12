@@ -468,12 +468,10 @@ class Club:
                             scoreboard = i.find('td', {'class': 'score-td'})
                             score = scoreboard.find('a')
                             if score.text != "превью" and score.text != "отменен":
-                                noindex = score.find('noindex')
-                                if noindex is not None:
-                                    if score['href'][:5] == "https":
-                                        links.append(score['href'])
-                                    else:
-                                        links.append("https://www.sports.ru/" + score['href'])
+                                if score['href'][:5] == "https":
+                                    links.append(score['href'])
+                                else:
+                                    links.append("https://www.sports.ru/" + score['href'])
                     except TypeError:
                         pass
         return links
