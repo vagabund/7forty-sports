@@ -503,7 +503,7 @@ class Club:
         df = pd.DataFrame(end_data, columns=['дата', 'турнир', 'хозяева', 'гости', 'счёт', 'жёлтые', 'варианты'])
         df_new = df.loc[(df["хозяева"] != "NaN") & (df["гости"] != "NaN")]
         df_new.to_csv(f'./csv/{self.name}.csv', index=False)
-        self.draw_variants(df_new)
+        # self.draw_variants(df_new)
         print(df_new.to_string())
 
     def draw_variants(self, df):
